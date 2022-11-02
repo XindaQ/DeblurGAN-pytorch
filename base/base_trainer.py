@@ -18,7 +18,7 @@ class BaseTrainer:
 
     def __init__(self, config, generator, discriminator, loss, metrics, optimizer, lr_scheduler, resume, train_logger):
         self.config = config
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)  # creat a logger
 
         # setup GPU device if available, move model into configured device and init the weights
         self.device, device_ids = self._prepare_device(config['n_gpu'])
