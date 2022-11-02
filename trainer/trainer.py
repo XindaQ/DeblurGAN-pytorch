@@ -30,12 +30,12 @@ class Trainer(BaseTrainer):
         acc_metrics = np.zeros(len(self.metrics))
         for i, metric in enumerate(self.metrics):
             acc_metrics[i] += metric(output, target)
-            self.writer.add_scalar('{}'.format(metric.__name__), acc_metrics[i])
+            self.writer.add_scalar('{}'.format(metric.__name__), acc_metrics[i])        # use the write to record data for the tensorboard
         return acc_metrics
 
     def _train_epoch(self, epoch):
         """
-        Training logic for an epoch
+        Training logic for one epoch
 
         :param epoch: Current training epoch.
         :return: A log that contains all information you want to save.
@@ -57,7 +57,7 @@ class Trainer(BaseTrainer):
         total_discriminator_loss = 0
         total_metrics = np.zeros(len(self.metrics))
 
-        for batch_idx, sample in enumerate(self.data_loader):
+        for batch_idx, sample in enumerate(self.data_loader):                           # train for all the batches
             self.writer.set_step((epoch - 1) * len(self.data_loader) + batch_idx)
 
             # get data and send them to GPU
@@ -74,31 +74,31 @@ class Trainer(BaseTrainer):
                 denormalized_deblurred = denormalize(deblurred)
 
             if batch_idx % 100 == 0:
-                # save blurred, sharp and deblurred image
+                # save blurred, sharp and deblurred image                               # record some image from the batch
                 self.writer.add_image('blurred', make_grid(denormalized_blurred.cpu()))
                 self.writer.add_image('sharp', make_grid(denormalized_sharp.cpu()))
                 self.writer.add_image('deblurred', make_grid(denormalized_deblurred.cpu()))
 
-            # get D's output
+            # get D's output                                                            # the sharp is the target while the deblurred is the output, need to be close
             sharp_discriminator_out = self.discriminator(sharp)
             deblurred_discriminator_out = self.discriminator(deblurred)
 
-            # set critic_updates
+            # set critic_updates                                                        # update how many time of critic/discriminator for one generator
             if self.config['loss']['adversarial'] == 'wgan_gp_loss':
                 critic_updates = 5
             else:
                 critic_updates = 1
 
-            # train discriminator
+            # train discriminator                                                           # train the discriminator first
             discriminator_loss = 0
             for i in range(critic_updates):
-                self.discriminator_optimizer.zero_grad()
+                self.discriminator_optimizer.zero_grad()                                    # clear the cache for grad calculation
 
                 # train discriminator on real and fake
                 if self.config['loss']['adversarial'] == 'wgan_gp_loss':
                     gp_lambda = self.config['others']['gp_lambda']
                     alpha = random.random()
-                    interpolates = alpha * sharp + (1 - alpha) * deblurred
+                    interpolates = alpha * sharp + (1 - alpha) * deblurred                  # generate the mixture of the output and target
                     interpolates_discriminator_out = self.discriminator(interpolates)
                     kwargs = {
                         'gp_lambda': gp_lambda,
@@ -107,8 +107,8 @@ class Trainer(BaseTrainer):
                         'sharp_discriminator_out': sharp_discriminator_out,
                         'deblurred_discriminator_out': deblurred_discriminator_out
                     }
-                    wgan_loss_d, gp_d = self.adversarial_loss('D', **kwargs)
-                    discriminator_loss_per_update = wgan_loss_d + gp_d
+                    wgan_loss_d, gp_d = self.adversarial_loss('D', **kwargs)                # use the pre-defined adversarial_loss by using the output and the target
+                    discriminator_loss_per_update = wgan_loss_d + gp_d                      # get the loss of the discriminator
 
                     self.writer.add_scalar('wgan_loss_d', wgan_loss_d.item())
                     self.writer.add_scalar('gp_d', gp_d.item())
@@ -117,7 +117,7 @@ class Trainer(BaseTrainer):
                         'sharp_discriminator_out': sharp_discriminator_out,
                         'deblurred_discriminator_out': deblurred_discriminator_out
                     }
-                    gan_loss_d = self.adversarial_loss('D', **kwargs)
+                    gan_loss_d = self.adversarial_loss('D', **kwargs)                       # computer the loss for the discriminator
                     discriminator_loss_per_update = gan_loss_d
 
                     self.writer.add_scalar('gan_loss_d', gan_loss_d.item())
@@ -125,37 +125,37 @@ class Trainer(BaseTrainer):
                     # add other loss if you like
                     raise NotImplementedError
 
-                discriminator_loss_per_update.backward(retain_graph=True)
-                self.discriminator_optimizer.step()
-                discriminator_loss += discriminator_loss_per_update.item()
+                discriminator_loss_per_update.backward(retain_graph=True)                   # back propogation calculate the grad
+                self.discriminator_optimizer.step()                                         # update the D model
+                discriminator_loss += discriminator_loss_per_update.item()                  # record the loss
 
-            discriminator_loss /= critic_updates
-            self.writer.add_scalar('discriminator_loss', discriminator_loss)
-            total_discriminator_loss += discriminator_loss
+            discriminator_loss /= critic_updates                                            # compute the average loss
+            self.writer.add_scalar('discriminator_loss', discriminator_loss)                # record in tensorboard
+            total_discriminator_loss += discriminator_loss                                  # accumulate the total loss
 
-            # train generator
+            # train generator                                                                   # then train the generator based on the result of the critic
             self.generator_optimizer.zero_grad()
 
             content_loss_lambda = self.config['others']['content_loss_lambda']
             kwargs = {
                 'deblurred_discriminator_out': deblurred_discriminator_out
             }
-            adversarial_loss_g = self.adversarial_loss('G', **kwargs)
-            content_loss_g = self.content_loss(deblurred, sharp) * content_loss_lambda
-            generator_loss = adversarial_loss_g + content_loss_g
+            adversarial_loss_g = self.adversarial_loss('G', **kwargs)                           # calculte out the generator loss based on the output of critic
+            content_loss_g = self.content_loss(deblurred, sharp) * content_loss_lambda          
+            generator_loss = adversarial_loss_g + content_loss_g                                # add the content loss of the images
 
             self.writer.add_scalar('adversarial_loss_g', adversarial_loss_g.item())
             self.writer.add_scalar('content_loss_g', content_loss_g.item())
             self.writer.add_scalar('generator_loss', generator_loss.item())
 
-            generator_loss.backward()
-            self.generator_optimizer.step()
+            generator_loss.backward()                                                           # back propogate
+            self.generator_optimizer.step()                                                     # update the generator
             total_generator_loss += generator_loss.item()
 
             # calculate the metrics
             total_metrics += self._eval_metrics(denormalized_deblurred, denormalized_sharp)
 
-            if self.verbosity >= 2 and batch_idx % self.log_step == 0:
+            if self.verbosity >= 2 and batch_idx % self.log_step == 0:                          # record and print the training info
                 self.logger.info(
                     'Train Epoch: {} [{}/{} ({:.0f}%)] generator_loss: {:.6f} discriminator_loss: {:.6f}'.format(
                         epoch,
@@ -167,7 +167,7 @@ class Trainer(BaseTrainer):
                     )
                 )
 
-        log = {
+        log = {                                                                                 # record info after one epoch training
             'generator_loss': total_generator_loss / len(self.data_loader),
             'discriminator_loss': total_discriminator_loss / len(self.data_loader),
             'metrics': (total_metrics / len(self.data_loader)).tolist()
@@ -177,7 +177,7 @@ class Trainer(BaseTrainer):
             val_log = self._valid_epoch(epoch)
             log = {**log, **val_log}
 
-        self.generator_lr_scheduler.step()
+        self.generator_lr_scheduler.step()                                                      # update the learning rate for the next epoch
         self.discriminator_lr_scheduler.step()
 
         return log
@@ -198,7 +198,7 @@ class Trainer(BaseTrainer):
         total_val_metrics = np.zeros(len(self.metrics))
 
         with torch.no_grad():
-            for batch_idx, sample in enumerate(self.valid_data_loader):
+            for batch_idx, sample in enumerate(self.valid_data_loader):                 # calculate the losses for each batch
                 blurred = sample['blurred'].to(self.device)
                 sharp = sample['sharp'].to(self.device)
 
@@ -211,7 +211,7 @@ class Trainer(BaseTrainer):
                 }
                 adversarial_loss_g = self.adversarial_loss('G', **kwargs)
                 content_loss_g = self.content_loss(deblurred, sharp) * content_loss_lambda
-                loss_g = adversarial_loss_g + content_loss_g
+                loss_g = adversarial_loss_g + content_loss_g                            # get the loss for the generator
 
                 self.writer.set_step((epoch - 1) * len(self.valid_data_loader) + batch_idx, 'valid')
                 self.writer.add_scalar('adversarial_loss_g', adversarial_loss_g.item())
@@ -222,10 +222,10 @@ class Trainer(BaseTrainer):
                 total_val_metrics += self._eval_metrics(denormalize(deblurred), denormalize(sharp))
 
         # add histogram of model parameters to the tensorboard
-        for name, p in self.generator.named_parameters():
+        for name, p in self.generator.named_parameters():                               # see the parameter condition of the generator models
             self.writer.add_histogram(name, p, bins='auto')
 
-        return {
+        return {                                                                        # reture the validation results
             'val_loss': total_val_loss / len(self.valid_data_loader),
             'val_metrics': (total_val_metrics / len(self.valid_data_loader)).tolist()
         }
