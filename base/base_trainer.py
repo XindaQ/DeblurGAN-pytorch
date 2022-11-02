@@ -30,20 +30,20 @@ class BaseTrainer:
             self.generator = torch.nn.DataParallel(generator, device_ids=device_ids)
             self.discriminator = torch.nn.DataParallel(discriminator, device_ids=device_ids)
 
-        self.adversarial_loss = loss['adversarial']
+        self.adversarial_loss = loss['adversarial']    # diffrent loss functions
         self.content_loss = loss['content']
         self.metrics = metrics
-        self.generator_optimizer = optimizer['generator']
+        self.generator_optimizer = optimizer['generator']       # different optimizers
         self.discriminator_optimizer = optimizer['discriminator']
-        self.generator_lr_scheduler = lr_scheduler['generator']
+        self.generator_lr_scheduler = lr_scheduler['generator']             # different learning rate schedulers
         self.discriminator_lr_scheduler = lr_scheduler['discriminator']
         self.train_logger = train_logger
 
-        cfg_trainer = config['trainer']
+        cfg_trainer = config['trainer']         # the input trianer configurations / some hyper-parameters
         self.epochs = cfg_trainer['epochs']
-        self.save_period = cfg_trainer['save_period']
+        self.save_period = cfg_trainer['save_period']       # save the model parameter in a frequency
         self.verbosity = cfg_trainer['verbosity']
-        self.monitor = cfg_trainer.get('monitor', 'off')
+        self.monitor = cfg_trainer.get('monitor', 'off')        # use monitor if the monitor exist, or "off"
 
         # configuration to monitor model performance and save best
         if self.monitor == 'off':
@@ -51,28 +51,28 @@ class BaseTrainer:
             self.mnt_best = 0
         else:
             self.mnt_mode, self.mnt_metric = self.monitor.split()
-            assert self.mnt_mode in ['min', 'max']
+            assert self.mnt_mode in ['min', 'max']              # only have the "max" and "min" modes
 
             self.mnt_best = math.inf if self.mnt_mode == 'min' else -math.inf
             self.early_stop = cfg_trainer.get('early_stop', math.inf)
 
-        self.start_epoch = 1
+        self.start_epoch = 1                                    # set the start epoch
 
         # setup directory for checkpoint saving
         start_time = datetime.datetime.now().strftime('%m%d_%H%M%S')
-        self.checkpoint_dir = os.path.join(cfg_trainer['save_dir'], config['name'], start_time)
+        self.checkpoint_dir = os.path.join(cfg_trainer['save_dir'], config['name'], start_time)     # set different folders
         # setup visualization writer instance
         writer_dir = os.path.join(cfg_trainer['log_dir'], config['name'], start_time)
-        self.writer = WriterTensorboardX(writer_dir, self.logger, cfg_trainer['tensorboardX'])
+        self.writer = WriterTensorboardX(writer_dir, self.logger, cfg_trainer['tensorboardX'])      # set tensorboard datas for visualization
 
         # Save configuration file into checkpoint directory
         ensure_dir(self.checkpoint_dir)
         config_save_path = os.path.join(self.checkpoint_dir, 'config.json')
         with open(config_save_path, 'w') as handle:
-            json.dump(config, handle, indent=4)
+            json.dump(config, handle, indent=4)                 # use json to record the checkpoint data
 
         if resume:
-            self._resume_checkpoint(resume)
+            self._resume_checkpoint(resume)                     # resume the check point
 
     def _prepare_device(self, n_gpu_use):
         """
@@ -96,8 +96,8 @@ class BaseTrainer:
         Full training logic
         """
         not_improved_count = 0
-        for epoch in range(self.start_epoch, self.epochs + 1):
-            result = self._train_epoch(epoch)
+        for epoch in range(self.start_epoch, self.epochs + 1):              # train all the epochs
+            result = self._train_epoch(epoch)                               # each epoch is trained in this function
 
             # save logged informations into log dict
             log = {'epoch': epoch}
@@ -109,7 +109,7 @@ class BaseTrainer:
                 else:
                     log[key] = value
 
-            # print logged informations to the screen
+            # print logged informations to the screen                       # print the information each epoch
             if self.train_logger is not None:
                 self.train_logger.add_entry(log)
                 if self.verbosity >= 1:
@@ -137,12 +137,12 @@ class BaseTrainer:
                 else:
                     not_improved_count += 1
 
-                if not_improved_count > self.early_stop:
+                if not_improved_count > self.early_stop:                        # early stop if not improved for long time (overfitting)                     
                     self.logger.info("Validation performance didn't improve for {} epochs. "
                                      "Training stops.".format(self.early_stop))
                     break
 
-            if epoch % self.save_period == 0:
+            if epoch % self.save_period == 0:                                   # save the model for checkpoint
                 self._save_checkpoint(epoch, save_best=is_best)
 
     def _train_epoch(self, epoch):
@@ -175,7 +175,7 @@ class BaseTrainer:
         filename = os.path.join(self.checkpoint_dir, 'checkpoint-epoch{}.pth'.format(epoch))
         torch.save(state, filename)
         self.logger.info("Saving checkpoint: {} ...".format(filename))
-        if save_best:
+        if save_best:                                                               # also save the best if the current checkpoint is the best
             best_path = os.path.join(self.checkpoint_dir, 'model_best.pth')
             torch.save(state, best_path)
             self.logger.info("Saving current best: {} ...".format('model_best.pth'))
