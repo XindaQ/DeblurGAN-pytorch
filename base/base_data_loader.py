@@ -9,7 +9,7 @@ class BaseDataLoader(DataLoader):
     Base class for all data loaders
     """
     def __init__(self, dataset, batch_size, shuffle, validation_split, num_workers, collate_fn=default_collate):
-        self.validation_split = validation_split
+        self.validation_split = validation_split            
         self.shuffle = shuffle
 
         self.batch_idx = 0
@@ -27,6 +27,9 @@ class BaseDataLoader(DataLoader):
         super(BaseDataLoader, self).__init__(sampler=self.sampler, **self.init_kwargs)
 
     def _split_sampler(self, split):
+        """
+        split the data into train and valid and shaffle the data
+        """
         if split == 0.0:
             return None, None
 
