@@ -7,7 +7,7 @@ from torchvision import models
 CONV3_3_IN_VGG_19 = models.vgg19(pretrained=True).features[:15].cuda()              # bring a pretrained model
 
 
-def get_norm_layer(norm_type='instance'):
+def get_norm_layer(norm_type='instance'):                          # define the different norm layers
     if norm_type == 'batch':
         norm_layer = nn.BatchNorm2d
     elif norm_type == 'instance':
@@ -40,7 +40,7 @@ class ResNetBlock(nn.Module):
 
         sequence += [
             nn.Conv2d(dim, dim, kernel_size=3, stride=1, padding=padding, bias=use_bias),     # keep the image in same channel, size will decrease by 2 using k=3
-            norm_layer(dim),
+            norm_layer(dim),                                                                  # this resnet keep a same size and channel (x -> x)
             nn.ReLU(True)
         ]
 
