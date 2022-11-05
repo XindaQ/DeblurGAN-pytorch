@@ -74,8 +74,8 @@ class NLayerDiscriminator(BaseModel):
     """Define a PatchGAN discriminator"""
 
     def __init__(self, input_nc, ndf=64, n_layers=3, norm_type='instance', use_sigmoid=False,               # try to get the representation for images
-                 use_minibatch_discrimination=False):
-        super(NLayerDiscriminator, self).__init__()
+                 use_minibatch_discrimination=False):                                           # 360*640 -> 180 -> 90/45/22 -> 21 -> 20
+        super(NLayerDiscriminator, self).__init__()                                   # finally use a matrix (1-channel feature tensor) as the classification result
 
         self.use_minibatch_discrimination = use_minibatch_discrimination
 
@@ -117,7 +117,7 @@ class NLayerDiscriminator(BaseModel):
         ]  # output 1 channel prediction map
 
         if use_sigmoid:
-            sequence += [nn.Sigmoid()]                                                      # one option to clamp the output
+            sequence += [nn.Sigmoid()]                                                      # clamp the result to [0, 1] inorder to use the GAN loss
 
         self.model = nn.Sequential(*sequence)                                               # get the whole model
 
