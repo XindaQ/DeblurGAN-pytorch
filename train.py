@@ -14,45 +14,45 @@ from model import model as module_arch
 
 
 def main(config, resume):
-    train_logger = Logger()
+    train_logger = Logger()                                                         # set the logger for the training
 
     # setup data_loader instances
-    data_loader_class = getattr(module_data, config['data_loader']['type'])
-    data_loader = data_loader_class(**config['data_loader']['args'])
-    valid_data_loader = data_loader.split_validation()
+    data_loader_class = getattr(module_data, config['data_loader']['type'])         
+    data_loader = data_loader_class(**config['data_loader']['args'])                # get the data loader class and the data
+    valid_data_loader = data_loader.split_validation()                              # get the vaild data                              
 
     # build model architecture
-    generator_class = getattr(module_arch, config['generator']['type'])
-    generator = generator_class(**config['generator']['args'])
+    generator_class = getattr(module_arch, config['generator']['type'])             
+    generator = generator_class(**config['generator']['args'])                      # get the generator
 
     discriminator_class = getattr(module_arch, config['discriminator']['type'])
-    discriminator = discriminator_class(**config['discriminator']['args'])
+    discriminator = discriminator_class(**config['discriminator']['args'])          # get the discriminator
 
-    print(generator)
+    print(generator)                                                                # look at the structures of G and D
     print(discriminator)
 
     # get function handles of loss and metrics
-    loss = {k: getattr(module_loss, v) for k, v in config['loss'].items()}
-    metrics = [getattr(module_metric, met) for met in config['metrics']]
+    loss = {k: getattr(module_loss, v) for k, v in config['loss'].items()}          # get the loss function
+    metrics = [getattr(module_metric, met) for met in config['metrics']]            # get the evaluation metrics
 
     # build optimizer for generator and discriminator
-    generator_trainable_params = filter(lambda p: p.requires_grad, generator.parameters())
-    discriminator_trainable_params = filter(lambda p: p.requires_grad, discriminator.parameters())
-    optimizer_class = getattr(torch.optim, config['optimizer']['type'])
+    generator_trainable_params = filter(lambda p: p.requires_grad, generator.parameters())              # get the parameters of the G
+    discriminator_trainable_params = filter(lambda p: p.requires_grad, discriminator.parameters())      # get the parameters of the D
+    optimizer_class = getattr(torch.optim, config['optimizer']['type'])                                 # get the optimizer
     optimizer = dict()
-    optimizer['generator'] = optimizer_class(generator_trainable_params, **config['optimizer']['args'])
+    optimizer['generator'] = optimizer_class(generator_trainable_params, **config['optimizer']['args'])             # put the parameters into optimizers
     optimizer['discriminator'] = optimizer_class(discriminator_trainable_params, **config['optimizer']['args'])
 
     # build learning rate scheduler for generator and discriminator
     lr_scheduler = dict()
-    lr_scheduler['generator'] = get_lr_scheduler(config['lr_scheduler'], optimizer['generator'])
+    lr_scheduler['generator'] = get_lr_scheduler(config['lr_scheduler'], optimizer['generator'])                    # set up the lr scheduler
     lr_scheduler['discriminator'] = get_lr_scheduler(config['lr_scheduler'], optimizer['discriminator'])
 
     # start to train the network
-    trainer = Trainer(config, generator, discriminator, loss, metrics, optimizer, lr_scheduler, resume, data_loader,
+    trainer = Trainer(config, generator, discriminator, loss, metrics, optimizer, lr_scheduler, resume, data_loader,    # build the trianer 
                       valid_data_loader, train_logger)
-    trainer.train()
-
+    trainer.train()                                                                                                     # train the parameters of the model
+                                                                                                                        # and update the parameters
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='DeblurGAN')
