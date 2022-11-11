@@ -12,14 +12,14 @@ class GoProDataLoader(BaseDataLoader):
     """
 
     def __init__(self, data_dir, batch_size, shuffle, validation_split, num_workers):
-        transform = transforms.Compose([
-            transforms.Resize([360, 640], Image.BICUBIC),  # downscale by a factor of two (720*1280 -> 360*640)
-            transforms.ToTensor(),  # convert to tensor
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # normalize
-        ])
-        self.dataset = dataset.GoProDataset(data_dir, transform=transform, height=360, width=640, fine_size=256)
+        transform = transforms.Compose([                                                                            # define a transformation for image processing
+            transforms.Resize([360, 640], Image.BICUBIC),  # downscale by a factor of two (720*1280 -> 360*640)     # down sampling
+            transforms.ToTensor(),  # convert to tensor                                                             # convert array from [0, 225] to [0,1]
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # normalize                                     # normalize the image to (mean,..), (std, .) for 3 channels
+        ])                                                                                                          # out = (in - mean) / std -> [-1, 1]
+        self.dataset = dataset.GoProDataset(data_dir, transform=transform, height=360, width=640, fine_size=256)    # convert the image to proper tensor dataset
 
-        super(GoProDataLoader, self).__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
+        super(GoProDataLoader, self).__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)     # initialize the parent class
 
 
 class GoProAlignedDataLoader(BaseDataLoader):
@@ -29,7 +29,7 @@ class GoProAlignedDataLoader(BaseDataLoader):
 
     def __init__(self, data_dir, batch_size, shuffle, validation_split, num_workers):
         transform = transforms.Compose([
-            transforms.Resize([360, 1280], Image.BICUBIC),  # downscale by a factor of two (720*2560 -> 360*1280)
+            transforms.Resize([360, 1280], Image.BICUBIC),  # downscale by a factor of two (720*2560 -> 360*1280)   # use a wider image
             transforms.ToTensor(),  # convert to tensor
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # normalize
         ])
@@ -45,7 +45,7 @@ class CustomDataLoader(DataLoader):
 
     def __init__(self, data_dir):
         transform = transforms.Compose([
-            transforms.ToTensor(),  # convert to tensor
+            transforms.ToTensor(),  # convert to tensor                                                             # directly use the input data
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # normalize
         ])
         self.dataset = dataset.CustomDataset(data_dir, transform=transform)
