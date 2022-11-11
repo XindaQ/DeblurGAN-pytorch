@@ -13,9 +13,9 @@ class GoProDataset(Dataset):
     """
 
     def __init__(self, data_dir='data', transform=None, height=360, width=640, fine_size=256):
-        self.blurred_dir = os.path.join(data_dir, 'blurred')
-        self.sharp_dir = os.path.join(data_dir, 'sharp')
-        self.image_names = os.listdir(self.blurred_dir)  # we assume that blurred and sharp images have the same names
+        self.blurred_dir = os.path.join(data_dir, 'blurred')                                                            # get the blurred image
+        self.sharp_dir = os.path.join(data_dir, 'sharp')                                                                # get the original image
+        self.image_names = os.listdir(self.blurred_dir)  # we assume that blurred and sharp images have the same names  # they have the same name
 
         self.transform = transform
 
@@ -103,7 +103,7 @@ class CustomDataset(Dataset):
         blurred = Image.open(os.path.join(self.data_dir, image_name)).convert('RGB')
         h = blurred.size[1]
         w = blurred.size[0]
-        new_h = h - h % 4 + 4 if h % 4 != 0 else h
+        new_h = h - h % 4 + 4 if h % 4 != 0 else h                                                          # manage the data size to fit for the CNN networks
         new_w = w - w % 4 + 4 if w % 4 != 0 else w
         blurred = transforms.Resize([new_h, new_w], Image.BICUBIC)(blurred)
 
