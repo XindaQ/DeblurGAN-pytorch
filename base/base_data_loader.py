@@ -13,12 +13,12 @@ class BaseDataLoader(DataLoader):
         self.shuffle = shuffle
 
         self.batch_idx = 0
-        self.n_samples = len(dataset)
+        self.n_samples = len(dataset)                                               
 
         self.sampler, self.valid_sampler = self._split_sampler(self.validation_split)
 
         self.init_kwargs = {
-            'dataset': dataset,
+            'dataset': dataset,                                                             # input the data in the data loader
             'batch_size': batch_size,
             'shuffle': self.shuffle,
             'collate_fn': collate_fn,
@@ -33,7 +33,7 @@ class BaseDataLoader(DataLoader):
         if split == 0.0:
             return None, None
 
-        idx_full = np.arange(self.n_samples)
+        idx_full = np.arange(self.n_samples)                                            # index for all data
 
         np.random.seed(0)
         np.random.shuffle(idx_full)
@@ -43,14 +43,14 @@ class BaseDataLoader(DataLoader):
         valid_idx = idx_full[0:len_valid]
         train_idx = np.delete(idx_full, np.arange(0, len_valid))
 
-        train_sampler = SubsetRandomSampler(train_idx)
+        train_sampler = SubsetRandomSampler(train_idx)                                  # sample elements randomly from a given list indices
         valid_sampler = SubsetRandomSampler(valid_idx)
 
         # turn off shuffle option which is mutually exclusive with sampler
         self.shuffle = False
         self.n_samples = len(train_idx)
 
-        return train_sampler, valid_sampler
+        return train_sampler, valid_sampler                                             # output the indexes of the data after the split and random sample
 
     def split_validation(self):
         if self.valid_sampler is None:
