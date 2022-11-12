@@ -139,7 +139,7 @@ class CustomDataset(Dataset):
         h = blurred.size[1]
         w = blurred.size[0]
         new_h = h - h % 4 + 4 if h % 4 != 0 else h                                                          # manage the data size to fit for the CNN networks
-        new_w = w - w % 4 + 4 if w % 4 != 0 else w
+        new_w = w - w % 4 + 4 if w % 4 != 0 else w                                                          # this makes the image can be divided by 4
         blurred = transforms.Resize([new_h, new_w], Image.BICUBIC)(blurred)
 
         if self.transform:
