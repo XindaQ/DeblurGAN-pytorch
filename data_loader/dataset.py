@@ -44,6 +44,38 @@ class GoProDataset(Dataset):
             sharp = sharp[:, h_offset:h_offset + self.fine_size, w_offset:w_offset + self.fine_size]
 
         return {'blurred': blurred, 'sharp': sharp}
+    
+class SensorDataset(Dataset):
+    """
+    Sensor dataset
+    """
+    def __init__(self, data_dir='data', transform=None):
+        self.data_dir = data_dir
+        self.blurred_dir = os.path.join(data_dir, 'blurred')
+        self.sharp_dir = os.path.join(data_dir, 'original')   
+        self.image_names = os.listdir(self.blurred_dir) 
+        
+        self.transform = transform
+        
+        self.height = 10
+        self.width = 10
+        
+    def __len__(self):
+        return len(self.image_names)
+    
+    def __getitem__(self, index):
+        """
+        get the data from the resorded dataset
+        """
+        sharp = np.load(self.sharp_dir)
+        blurred = np.load(self.blurred_dir)
+        
+        if self.transform:
+            # transform to a proper tensor
+            sharp = self.transform(sharp)
+            blurred = self.transform(blurred)
+            
+        return {'sharp': sharp, "blurred": blurred}
 
 
 class GoProAlignedDataset(Dataset):
