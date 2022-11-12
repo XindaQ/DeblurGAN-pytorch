@@ -8,7 +8,8 @@
             "batch_size": 1,
             "shuffle": false,
             "validation_split": 0,
-            "num_workers": 4
+            "num_workers": 4,
+            "scale": 5000
         }
     },
     "generator": {
