@@ -49,12 +49,13 @@ class SensorDataset(Dataset):
     """
     Sensor dataset
     """
-    def __init__(self, data_dir='data', transform=None):
+    def __init__(self, data_dir='data', transform=None, scale=1):
         self.data_dir = data_dir
         self.blurred_dir = os.path.join(data_dir, 'blurred')
         self.sharp_dir = os.path.join(data_dir, 'original')   
         self.image_names = os.listdir(self.blurred_dir) 
         
+        self.scale = scale
         self.transform = transform
         
         self.height = 10
@@ -67,12 +68,12 @@ class SensorDataset(Dataset):
         """
         get the data from the resorded dataset
         """
-        sharp = np.load(self.sharp_dir)
-        blurred = np.load(self.blurred_dir)
+        sharp = np.load(self.sharp_dir) / self.scale
+        blurred = np.load(self.blurred_dir) / self.scale
         
         if self.transform:
             # transform to a proper tensor
-            sharp = self.transform(sharp)
+            sharp = self.transform(sharp) 
             blurred = self.transform(blurred)
             
         return {'sharp': sharp, "blurred": blurred}
