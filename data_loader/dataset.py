@@ -51,18 +51,20 @@ class SensorDataset(Dataset):
     """
     def __init__(self, data_dir='data', transform=None, scale=1):
         self.data_dir = data_dir
-        self.blurred_dir = os.path.join(data_dir, 'blurred')
-        self.sharp_dir = os.path.join(data_dir, 'original')   
+        self.blurred_dir = os.path.join(data_dir, 'blurred.npy')
+        self.sharp_dir = os.path.join(data_dir, 'original.npy')   
+        self.len_dir = os.path.join(data_dir, 'len.npy')   
         self.image_names = os.listdir(self.blurred_dir) 
         
         self.scale = scale
         self.transform = transform
+        self.length = np.load(self.len_dir)
         
         self.height = 10
         self.width = 10
         
     def __len__(self):
-        return len(self.image_names)
+        return self.length
     
     def __getitem__(self, index):
         """
