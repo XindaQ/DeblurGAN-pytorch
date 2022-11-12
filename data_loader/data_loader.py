@@ -33,7 +33,7 @@ class SensorDataLoader(BaseDataLoader):
             ])
         self.dataset = dataset.SensorDataset(data_dir, transform=transform, scale)
         
-        super(SensorDataLoader, self).__init__(self.dataset, batch_size, shuffle, validation_split, num_workers, scale)
+        super(SensorDataLoader, self).__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
 
 
 class GoProAlignedDataLoader(BaseDataLoader):
