@@ -20,6 +20,21 @@ class GoProDataLoader(BaseDataLoader):
         self.dataset = dataset.GoProDataset(data_dir, transform=transform, height=360, width=640, fine_size=256)    # convert the image to proper tensor dataset
 
         super(GoProDataLoader, self).__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)     # initialize the parent class
+        
+class SensorDataLoader(BaseDataLoader):
+    """
+    Sensor data loader
+    """
+    def __init__(self, data_dir, batch_size, shuffle, validation_split, num_workers):
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.5), (0.5))
+            ])
+        
+        self.dataset = dataset.SensorDataset(data_dir, transform=transform)
+        
+        super(SensorDataLoader, self).__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
+
 
 
 class GoProAlignedDataLoader(BaseDataLoader):
