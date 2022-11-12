@@ -31,7 +31,6 @@ class SensorDataLoader(BaseDataLoader):
             transforms.ToTensor(),
             transforms.Normalize((0.5), (0.5))
             ])
-        
         self.dataset = dataset.SensorDataset(data_dir, transform=transform, scale)
         
         super(SensorDataLoader, self).__init__(self.dataset, batch_size, shuffle, validation_split, num_workers, scale)
