@@ -195,3 +195,68 @@ class NLayerDiscriminator(BaseModel):
             a = out.size(1)
             out = MinibatchDiscrimination(a, a, 3)(out)
         return out
+    
+    class NLayerDiscriminatorReduced(BaseModel):
+    """
+    Define a PatchGAN discriminator
+    
+    less layer and channel: 10 -> 2x 5 -> 5 -> 5
+    
+    """
+
+    def __init__(self, input_nc, ndf=16, n_layers=2, norm_type='instance', use_sigmoid=False,               # try to get the representation for images
+                 use_minibatch_discrimination=False):                                           # 360(*640) -> 180 -> 90/45/22 -> 21 -> 20
+        super(NLayerDiscriminator, self).__init__()                                   # finally use a matrix (1-channel feature tensor) as the classification result
+
+        self.use_minibatch_discrimination = use_minibatch_discrimination
+
+        norm_layer = get_norm_layer(norm_type)                                  # get the normalization layer
+        if type(norm_layer) == functools.partial:  # no need to use bias as BatchNorm2d has affine parameters
+            use_bias = norm_layer.func != nn.BatchNorm2d
+        else:
+            use_bias = norm_layer != nn.BatchNorm2d
+
+        kernel_size = 4
+        kernel_size_2 = 3
+        padding = 1
+        sequence = [
+            nn.Conv2d(input_nc, ndf, kernel_size=kernel_size, stride=2, padding=padding),   # first layer, increase the channel and half the size with stride 2    
+            nn.LeakyReLU(0.2, True)                                                         # use LeakyReLU as activation 
+        ]
+
+        nf_mult = 1
+        for n in range(1, n_layers):  # gradually increase the number of filters            # increase the channel and leave the size still
+            nf_mult_prev = nf_mult
+            nf_mult = min(2 ** n, 8)
+            sequence += [
+                nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kernel_size_2, stride=1, padding=padding,
+                          bias=use_bias),
+                norm_layer(ndf * nf_mult),
+                nn.LeakyReLU(0.2, True)
+            ]
+
+        nf_mult_prev = nf_mult
+        nf_mult = min(2 ** n_layers, 8)
+        sequence += [                                                                       # clamp the channels and try to keep a almost same size (x -> x-1)
+            nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kernel_size_2, stride=1, padding=padding,
+                      bias=use_bias),
+            norm_layer(ndf * nf_mult),
+            nn.LeakyReLU(0.2, True)
+        ]
+
+        sequence += [
+            nn.Conv2d(ndf * nf_mult, 1, kernel_size=kernel_size_2, stride=1, padding=padding) # reduce the channel to 1 and maintain size (x -> x-1)
+        ]  # output 1 channel prediction map
+
+        if use_sigmoid:
+            sequence += [nn.Sigmoid()]                                                      # clamp the result to [0, 1] inorder to use the GAN loss
+
+        self.model = nn.Sequential(*sequence)                                               # get the whole model
+
+    def forward(self, x):
+        out = self.model(x)
+        if self.use_minibatch_discrimination:
+            out = out.view(out.size(0), -1)
+            a = out.size(1)
+            out = MinibatchDiscrimination(a, a, 3)(out)
+        return out
