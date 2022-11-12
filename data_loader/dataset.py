@@ -58,7 +58,7 @@ class SensorDataset(Dataset):
         
         self.scale = scale
         self.transform = transform
-        self.length = np.load(self.len_dir)
+        self.length = int(np.load(self.len_dir))
         
         self.height = 10
         self.width = 10
