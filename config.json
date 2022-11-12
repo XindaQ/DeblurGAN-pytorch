@@ -2,7 +2,7 @@
     "name": "DeblurGAN",
     "n_gpu": 1,
     "data_loader": {
-        "type": "GoProDataLoader",
+        "type": "SensorDataLoader",
         "args": {
             "data_dir": "data/",
             "batch_size": 1,
