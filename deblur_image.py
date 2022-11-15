@@ -8,14 +8,14 @@ import torch
 
 def main(blurred_dir, deblurred_dir, resume):
     # load checkpoint
-    checkpoint = torch.load(resume)
+    checkpoint = torch.load(resume)                                                     # load the checkpoint from a path
     config = checkpoint['config']
 
     # setup data_loader instances
-    data_loader = CustomDataLoader(data_dir=blurred_dir)
+    data_loader = CustomDataLoader(data_dir=blurred_dir)                                # get the data loader
 
     # build model architecture
-    generator_class = getattr(module_arch, config['generator']['type'])
+    generator_class = getattr(module_arch, config['generator']['type'])                 # get the generator (main model)
     generator = generator_class(**config['generator']['args'])
 
     # prepare model for deblurring
@@ -41,10 +41,10 @@ def main(blurred_dir, deblurred_dir, resume):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Deblur your own image!')
 
-    parser.add_argument('-b', '--blurred', required=True, type=str, help='dir of blurred images')
+    parser.add_argument('-b', '--blurred', required=True, type=str, help='dir of blurred images')                   # send the blurred image in
     parser.add_argument('-d', '--deblurred', required=True, type=str, help='dir to save deblurred images')
-    parser.add_argument('-r', '--resume', required=True, type=str, help='path to latest checkpoint')
-    parser.add_argument('--device', default=None, type=str, help='indices of GPUs to enable (default: all)')
+    parser.add_argument('-r', '--resume', required=True, type=str, help='path to latest checkpoint')                # send the trained model in
+    parser.add_argument('--device', default=1, type=str, help='indices of GPUs to enable (default: all)')           # choose a GPU or not
 
     args = parser.parse_args()
 
@@ -55,4 +55,4 @@ if __name__ == '__main__':
     from data_loader.data_loader import CustomDataLoader
     from utils.util import denormalize
 
-    main(args.blurred, args.deblurred, args.resume)
+    main(args.blurred, args.deblurred, args.resume)                                                                 # go to calculate the output
